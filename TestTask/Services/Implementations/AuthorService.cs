@@ -9,6 +9,8 @@ namespace TestTask.Services.Implementations
     {
         private readonly ApplicationDbContext _context;
 
+        private DateTime DATE_CLAUSE = new DateTime(2012, 05, 25);
+
         public AuthorService(ApplicationDbContext context)
         {
             _context = context;
@@ -18,16 +20,13 @@ namespace TestTask.Services.Implementations
         {
             var titles = await _context.Books.Select(b => b.Title).ToListAsync();
 
-            var books = _context.Books.
-                Where(title => title.Title.Length == titles.OrderByDescending(s => s.Length).First().Length);
+            var books = _context.Books
+                .Where(title => title.Title.Length == titles.Max().Length);
 
-            var authors = await _context.Authors
+            var author = _context.Authors
                 .Where(a => books.Any(b => b.AuthorId == a.Id))
-                .ToListAsync();
-
-            var author = authors.OrderByDescending(s => s.Id).Last();
-
-            Console.WriteLine(author.Name);
+                .OrderByDescending(s => s.Id)
+                .Last();
 
             return author;
         }
@@ -35,15 +34,15 @@ namespace TestTask.Services.Implementations
         public async Task<List<Author>> GetAuthors()
         {
             var authorsBooks = await _context.Books
-               .Where(b => b.PublishDate > new DateTime(2016, 01, 01))
+               .Where(b => b.PublishDate > DATE_CLAUSE)
                .GroupBy(b => b.AuthorId)
-               .Where(g => g.Count() % 2 == 0)
-               .Select(g => g.Key)
+               .Where(b => b.Count() % 2 == 0)
+               .Select(b => b.Key)
                .ToListAsync();
 
             var authors = await _context.Authors
-                .Where(a => authorsBooks.Contains(a.Id))
-                .ToListAsync();
+               .Where(a => authorsBooks.Contains(a.Id))
+               .ToListAsync();
 
             return authors;
         }
