@@ -9,6 +9,9 @@ namespace TestTask.Services.Implementations
     {
         private readonly ApplicationDbContext _context;
 
+        private DateTime DATE_CLAUSE = new DateTime(2012, 05, 25);
+        private const string TITLE_CLAUSE = "Red";
+
         public BookService(ApplicationDbContext context)
         {
             _context = context;
@@ -16,14 +19,24 @@ namespace TestTask.Services.Implementations
 
         public async Task<Book> GetBook()
         {
-            var books = await _context.Books.FirstOrDefaultAsync();
+            var maxPrice = await _context.Books
+                .MaxAsync(p => p.Price);
 
-            return books;
+            var book = await _context.Books
+                .Where(b => b.Price == maxPrice)
+                .FirstAsync();
+
+            return book;
         }
 
-        public Task<List<Book>> GetBooks()
+        public async Task<List<Book>> GetBooks()
         {
-            throw new NotImplementedException();
+            var books = await _context.Books
+               .Where(b => b.PublishDate > DATE_CLAUSE)
+               .Where(b => b.Title.Contains(TITLE_CLAUSE))
+               .ToListAsync();
+
+            return books;
         }
     }
 }
